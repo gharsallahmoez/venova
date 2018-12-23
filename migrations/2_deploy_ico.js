@@ -1,5 +1,6 @@
-var VenovaToken = artifacts.require("./Venova.sol");
-var VenovaCrowdsale = artifacts.require("./VenovaCrowdsale.sol");
+const Venova = artifacts.require("./Venova.sol");
+const VenovaCrowdsale = artifacts.require("./VenovaCrowdsale.sol");
+const ether = (n) => new web3.BigNumber(web3.toWei(n, 'ether'));
 const duration = {
   seconds: function (val) { return val; },
   minutes: function (val) { return val * this.seconds(60); },
@@ -9,21 +10,36 @@ const duration = {
   years: function (val) { return val * this.days(365); },
 };
 module.exports = async function(deployer, network, accounts) {
-  deployer.deploy(VenovaToken, "Venova Network", "VNV", 18).then(async () => {
-    const deployedToken = await VenovaToken.deployed();
-    const rate = 1000; // 1 eth = 1000 VNV tokens
-    const wallet = accounts[0];
-    const timeNow = Math.floor(Date.now() / 1000);
-    const openingTime = timeNow  + duration.seconds(30);
-    const closingTime = timeNow  + duration.years(1);
-    const cap = web3.toWei(1); // 1 eth
-    await deployer.deploy(VenovaCrowdsale, rate, wallet, deployedToken.address, openingTime, closingTime, cap);
-    const deployedCrowdsale = await VenovaCrowdsale.deployed();
-    await deployedToken.transferOwnership(deployedCrowdsale.address);
-    return true;
-
-  })
-
-
-
+  const _name = "Venova Network";
+  const _symbol = "VNV";
+  const _decimals = 18;
+  await deployer.deploy(Venova, _name, _symbol, _decimals);
+  const deployedToken = await Venova.deployed();
+  const latestTime = (new Date).getTime();
+  const _rate           = 1000;
+  const _wallet         = accounts[0]; // TODO: Replace me
+  const _token          = deployedToken.address;
+  const _openingTime    = latestTime + duration.minutes(1);
+  const _closingTime    = _openingTime + duration.weeks(1);
+  const _cap            = ether(64400);
+  const _goal           = ether(30000);
+  const _foundersFund   = accounts[0]; // TODO: Replace me
+  const _foundationFund = accounts[0]; // TODO: Replace me
+  const _partnersFund   = accounts[0]; // TODO: Replace me
+  const _releaseTime    = _closingTime + duration.days(1);
+  await deployer.deploy(
+    VenovaCrowdsale,
+    _rate,
+    _wallet,
+    _token,
+    _cap,
+    _openingTime,
+    _closingTime,
+    _goal,
+    _foundersFund,
+    _foundationFund,
+    _partnersFund,
+    _releaseTime
+  );
+  return true;
 };
